@@ -41,9 +41,11 @@
 #include <curses.h>
 #include <signal.h>
 #include <unistd.h>
+#include <string.h>
 #include "sl.h"
 
 void add_smoke(int y, int x);
+void add_text(int y, int x);
 void add_man(int y, int x);
 int add_C51(int x);
 int add_D51(int x);
@@ -55,6 +57,7 @@ int ACCIDENT  = 0;
 int LOGO      = 0;
 int FLY       = 0;
 int C51       = 0;
+int MSG       = 0;
 
 int my_mvaddstr(int y, int x, char *str)
 {
@@ -67,7 +70,7 @@ int my_mvaddstr(int y, int x, char *str)
 
 void option(char *str)
 {
-    extern int ACCIDENT, LOGO, FLY, C51;
+    extern int ACCIDENT, LOGO, FLY, C51, MSG;
 
     while (*str != '\0') {
         switch (*str++) {
@@ -75,18 +78,33 @@ void option(char *str)
             case 'F': FLY      = 1; break;
             case 'l': LOGO     = 1; break;
             case 'c': C51      = 1; break;
+            case 's': MSG      = 1; break;
             default:                break;
         }
     }
 }
 
+char msg[15];
+
 int main(int argc, char *argv[])
 {
-    int x, i;
+    int x, i, msg_read=0;
+
 
     for (i = 1; i < argc; ++i) {
         if (*argv[i] == '-') {
             option(argv[i] + 1);
+            if (MSG && !msg_read)
+            {
+                if ((i + 1) < argc)
+                {
+                    sprintf(msg, "%14s", argv[i+1]);
+                    msg_read = 1;
+                }
+                else {
+                    return -1;
+                }
+            }
         }
     }
     initscr();
@@ -102,6 +120,7 @@ int main(int argc, char *argv[])
             if (add_sl(x) == ERR) break;
         }
         else if (C51 == 1) {
+            /* NOTE: If you want to add a second carriage you have to change the return logic */
             if (add_C51(x) == ERR) break;
         }
         else {
@@ -111,7 +130,7 @@ int main(int argc, char *argv[])
         refresh();
         usleep(40000);
     }
-    mvcur(0, COLS - 1, LINES - 1, 0);
+    // mvcur(0, COLS - 1, LINES - 1, 0);
     endwin();
 
     return 0;
@@ -174,8 +193,13 @@ int add_D51(int x)
             D51WHL51, D51WHL52, D51WHL53, D51DEL},
            {D51STR1, D51STR2, D51STR3, D51STR4, D51STR5, D51STR6, D51STR7,
             D51WHL61, D51WHL62, D51WHL63, D51DEL}};
-    static char *coal[D51HEIGHT + 1]
-        = {COAL01, COAL02, COAL03, COAL04, COAL05,
+    char coal5[255];
+    /*
+               |  
+    */
+    sprintf(coal5, " =|   %15s      |  ", msg);
+    char *coal[D51HEIGHT + 1]
+        = {COAL01, COAL02, COAL03, COAL04, coal5,
            COAL06, COAL07, COAL08, COAL09, COAL10, COALDEL};
 
     int y, i, dy = 0;
@@ -191,6 +215,10 @@ int add_D51(int x)
         my_mvaddstr(y + i, x, d51[(D51LENGTH + x) % D51PATTERNS][i]);
         my_mvaddstr(y + i + dy, x + 53, coal[i]);
     }
+    /* Add second coal coach */
+    // for (i = D51HEIGHT; i <= (2*D51HEIGHT); ++i) {
+    //     my_mvaddstr(y + (i-D51HEIGHT) + dy, x + (81), coal[i-D51HEIGHT]);
+    // }
     if (ACCIDENT == 1) {
         add_man(y + 2, x + 43);
         add_man(y + 2, x + 47);
@@ -214,8 +242,11 @@ int add_C51(int x)
             C51WH51, C51WH52, C51WH53, C51WH54, C51DEL},
            {C51STR1, C51STR2, C51STR3, C51STR4, C51STR5, C51STR6, C51STR7,
             C51WH61, C51WH62, C51WH63, C51WH64, C51DEL}};
-    static char *coal[C51HEIGHT + 1]
-        = {COALDEL, COAL01, COAL02, COAL03, COAL04, COAL05,
+    char coal5[255];
+    sprintf(coal5, "   %s   ", "CIAOCIAO");
+    printf("%s\n", coal5);
+    char *coal[C51HEIGHT + 1]
+        = {COALDEL, COAL01, COAL02, COAL03, COAL04, coal5,
            COAL06, COAL07, COAL08, COAL09, COAL10, COALDEL};
 
     int y, i, dy = 0;
@@ -293,3 +324,46 @@ void add_smoke(int y, int x)
         sum ++;
     }
 }
+
+void add_text(int y, int x)
+{
+    static struct smokes {
+        int y, x;
+        int ptrn, kind;
+    } S[1000];
+    static int sum = 0;
+    static char *Smoke[2][SMOKEPTNS]
+        = {{"(   )", "(    )", "(    )", "(   )", "(  )",
+            "(  )" , "( )"   , "( )"   , "()"   , "()"  ,
+            "O"    , "O"     , "O"     , "O"    , "O"   ,
+            " "                                          },
+           {"(@@@)", "(@@@@)", "(@@@@)", "(@@@)", "(@@)",
+            "(@@)" , "(@)"   , "(@)"   , "@@"   , "@@"  ,
+            "@"    , "@"     , "@"     , "@"    , "@"   ,
+            " "                                          }};
+    static char *Eraser[SMOKEPTNS]
+        =  {"     ", "      ", "      ", "     ", "    ",
+            "    " , "   "   , "   "   , "  "   , "  "  ,
+            " "    , " "     , " "     , " "    , " "   ,
+            " "                                          };
+    static int dy[SMOKEPTNS] = { 2,  1, 1, 1, 0, 0, 0, 0, 0, 0,
+                                 0,  0, 0, 0, 0, 0             };
+    static int dx[SMOKEPTNS] = {-2, -1, 0, 1, 1, 1, 1, 1, 2, 2,
+                                 2,  2, 2, 3, 3, 3             };
+    int i;
+
+    if (x % 4 == 0) {
+        for (i = 0; i < sum; ++i) {
+            my_mvaddstr(S[i].y, S[i].x, Eraser[S[i].ptrn]);
+            S[i].y    -= dy[S[i].ptrn];
+            S[i].x    += dx[S[i].ptrn];
+            S[i].ptrn += (S[i].ptrn < SMOKEPTNS - 1) ? 1 : 0;
+            my_mvaddstr(S[i].y, S[i].x, Smoke[S[i].kind][S[i].ptrn]);
+        }
+        my_mvaddstr(y, x, Smoke[sum % 2][0]);
+        S[sum].y = y;    S[sum].x = x;
+        S[sum].ptrn = 0; S[sum].kind = sum % 2;
+        sum ++;
+    }
+}
+

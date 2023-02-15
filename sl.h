@@ -51,7 +51,7 @@
 #define COAL02 "                              "
 #define COAL03 "    _________________         "
 #define COAL04 "   _|                \\_____A  "
-#define COAL05 " =|                        |  "
+#define COAL05 " =|   EMA FROCIO           |  "
 #define COAL06 " -|                        |  "
 #define COAL07 "__|________________________|_ "
 #define COAL08 "|__________________________|_ "

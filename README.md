@@ -8,3 +8,6 @@ all.
 Copyright 1993,1998,2014 Toyoda Masashi (mtoyoda@acm.org)
 
 ![](demo.gif)
+
+!!! W.I.P. !!!
+This fork allows users to add custom messages to the coal carriage (yes, I was pretty bored)
